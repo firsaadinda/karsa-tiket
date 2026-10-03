@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Ticket as TicketIcon, Calendar, CheckCircle, XCircle, UserCheck, AlertCircle, Trash2 } from 'lucide-react';
+import { Plus, Ticket as TicketIcon, Calendar, CheckCircle, XCircle, UserCheck, AlertCircle, Trash2, Search } from 'lucide-react';
 import { formatRupiah } from '../data/mockData';
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { LoadingSkeleton, EmptyState, ErrorState } from '../components/StateViews';
@@ -16,6 +16,7 @@ export default function TiketView({
   onRetry
 }) {
   const [activeTab, setActiveTab] = useState('semua');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -152,10 +153,16 @@ export default function TiketView({
     setDeleteTarget(null);
   };
 
-  // Filter Tiket berdasarkan Tab
-  const filteredTiket = activeTab === 'semua'
-    ? tiketList
-    : tiketList.filter((t) => t.status === activeTab);
+  // Filter Tiket berdasarkan Tab dan Kata Kunci Pencarian (Nama / No WA)
+  const filteredTiket = tiketList.filter((t) => {
+    const matchesTab = activeTab === 'semua' || t.status === activeTab;
+    const term = searchTerm.toLowerCase().trim();
+    const matchesSearch = !term ||
+      t.nama_pembeli.toLowerCase().includes(term) ||
+      t.pembeli_id.includes(term) ||
+      t.nama_event.toLowerCase().includes(term);
+    return matchesTab && matchesSearch;
+  });
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -183,6 +190,22 @@ export default function TiketView({
           <Plus size={18} />
           <span>Buat Tiket</span>
         </button>
+      </div>
+
+      {/* Kolom Cari Tiket / Pembeli untuk Kemudahan Check-in */}
+      <div style={{ position: 'relative', marginBottom: '16px' }}>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Cari tiket berdasarkan nama pembeli, no. WhatsApp, atau nama event..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ paddingLeft: '40px' }}
+        />
+        <Search
+          size={18}
+          style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+        />
       </div>
 
       {/* Tabs Filter Status */}
