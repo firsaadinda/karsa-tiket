@@ -5,11 +5,11 @@ Rencana ini disusun secara modular dan bertahap mengikuti metodologi *superpower
 ---
 
 ## Tahap 1: Setup Proyek & Fondasi Desain
-- [ ] **1.1 Inisialisasi Vite + React**
+- [x] **1.1 Inisialisasi Vite + React**
   - Setup React SPA menggunakan Vite di workspace.
   - Konfigurasi styling (CSS/Tailwind) dengan tema warna modern (indigo/violet & amber untuk aksen tiket).
   - Pasang dependensi esensial: `lucide-react` (ikon), `firebase` (SDK modular).
-- [ ] **1.2 Layout & Komponen Global**
+- [x] **1.2 Layout & Komponen Global**
   - Komponen `Navbar` responsif dengan 4 navigasi modul: **Event**, **Pembeli**, **Tiket**, **Rekap**.
   - Komponen `Modal` / `Dialog` konfirmasi hapus yang seragam.
   - Komponen `Toast` untuk umpan balik aksi (sukses / galat).
@@ -20,45 +20,45 @@ Rencana ini disusun secara modular dan bertahap mengikuti metodologi *superpower
 ## Tahap 2: Mock Data & Prototipe UI (Bagian A Tugas Mandiri)
 
 ### 2.1 Modul Event (Master Acara)
-- [ ] **Daftar Event**:
+- [x] **Daftar Event**:
   - Tampilan kartu acara: tanggal, lokasi, harga tiket format rupiah, sisa kuota (`kuota - tiket_terjual`), badge status "Habis".
   - Pasang 3-state (Loading, Empty, Error).
-- [ ] **Formulir Event (Tambah & Ubah)**:
+- [x] **Formulir Event (Tambah & Ubah)**:
   - Form modal/halaman dengan input: Nama, Tanggal (`date`), Lokasi, Harga Tiket, Kuota.
   - Validasi: Harga $\ge 0$, Kuota 1 - 500, Kuota baru $\ge tiket\_terjual$.
-- [ ] **Aksi Hapus**:
+- [x] **Aksi Hapus**:
   - Tombol hapus dengan dialog konfirmasi sebelum eksekusi.
 
 ### 2.2 Modul Pembeli (Master Kontak)
-- [ ] **Daftar & Pencarian Pembeli**:
+- [x] **Daftar & Pencarian Pembeli**:
   - Tampilan tabel/daftar pembeli (Nama, No WhatsApp, Email).
   - Kolom pencarian realtime yang menyaring berdasarkan nama atau no WhatsApp.
   - Pasang 3-state (Loading, Empty, Error).
-- [ ] **Formulir Pembeli (Tambah & Ubah)**:
+- [x] **Formulir Pembeli (Tambah & Ubah)**:
   - Form input: Nama, No WhatsApp (diawali `08`, 10-13 digit), Email (mengandung `@`).
   - Validasi duplikasi nomor WhatsApp (cek apakah sudah terdaftar).
-- [ ] **Aksi Hapus**:
+- [x] **Aksi Hapus**:
   - Tombol hapus dengan dialog konfirmasi.
 
 ### 2.3 Modul Tiket (Transaksi)
-- [ ] **Daftar Tiket & Tabs Filter**:
+- [x] **Daftar Tiket & Tabs Filter**:
   - Tabs filter status: **Semua**, **Menunggu Bayar**, **Lunas**, **Hadir**, **Dibatalkan**.
   - Kartu tiket menampilkan snapshot data: nama event, tanggal event, nama pembeli, jumlah tiket, total bayar, status badge.
   - Pasang 3-state (Loading, Empty, Error).
-- [ ] **Formulir Pembelian Tiket**:
+- [x] **Formulir Pembelian Tiket**:
   - Dropdown Event (hanya menampilkan event yang memiliki sisa kuota $> 0$).
   - Dropdown Pembeli.
   - Input jumlah tiket: 1 s.d. 5, tidak melebihi sisa kuota.
   - Total bayar terkalkulasi otomatis secara realtime.
   - Saat simpan: Status awal otomatis `menunggu_bayar` dan menambah `tiket_terjual` pada event.
-- [ ] **Alur Transisi Status**:
+- [x] **Alur Transisi Status**:
   - Tombol aksi transisi sesuai aturan:
     - `menunggu_bayar` $\rightarrow$ `lunas` (pembayaran diverifikasi)
     - `menunggu_bayar` $\rightarrow$ `dibatalkan` (stok kuota event otomatis dikembalikan)
     - `lunas` $\rightarrow$ `hadir` (check-in saat hari H acara)
 
 ### 2.4 Modul Rekap (Dashboard Ringkasan)
-- [ ] **Tampilan Rekap per Event**:
+- [x] **Tampilan Rekap per Event**:
   - Dropdown pemilih Event.
   - 4 Kartu KPI:
     1. Tiket Terjual
