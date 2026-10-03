@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, MapPin, Tag, Users, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Calendar, MapPin, Tag, Users, Edit2, Trash2, ExternalLink, Compass } from 'lucide-react';
 import { formatRupiah } from '../data/mockData';
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { LoadingSkeleton, EmptyState, ErrorState } from '../components/StateViews';
@@ -146,32 +146,87 @@ export default function EventView({ events, setEvents, showToast, isLoading, isE
             const sisaKuota = ev.kuota - ev.tiket_terjual;
             const isHabis = sisaKuota <= 0;
 
+            // Thumbnail ilustrasi dinamis berdasarkan jenis event komunitas (seni, musik, workshop)
+            const getEventBanner = (nama) => {
+              const lower = (nama || '').toLowerCase();
+              if (lower.includes('sablon') || lower.includes('tote') || lower.includes('lukis')) {
+                return 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80';
+              }
+              if (lower.includes('konser') || lower.includes('akustik') || lower.includes('musik')) {
+                return 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80';
+              }
+              if (lower.includes('keramik') || lower.includes('tembikar') || lower.includes('pottery')) {
+                return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&auto=format&fit=crop&q=80';
+              }
+              return 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop&q=80';
+            };
+
+            const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.lokasi)}`;
+
             return (
-              <div key={ev.id} className="card">
-                <div className="card-header">
-                  <div>
-                    <h3 className="card-title">{ev.nama}</h3>
-                    <div style={{ display: 'flex', gap: '14px', marginTop: '6px', color: 'var(--text-muted)', fontSize: '0.83rem', flexWrap: 'wrap' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={14} />
-                        {ev.tanggal}
+              <div key={ev.id} className="card" style={{ overflow: 'hidden', padding: 0 }}>
+                {/* Banner Gambar Event */}
+                <div style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden' }}>
+                  <img
+                    src={getEventBanner(ev.nama)}
+                    alt={ev.nama}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, transparent 60%)'
+                  }} />
+                  <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                    {isHabis ? (
+                      <span className="badge badge-danger">Habis</span>
+                    ) : (
+                      <span className="badge badge-success">
+                        Sisa {sisaKuota} Kuota
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={14} />
-                        {ev.lokasi}
-                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Konten Kartu */}
+                <div style={{ padding: '16px 18px 18px' }}>
+                  <div className="card-header" style={{ marginBottom: '8px' }}>
+                    <div>
+                      <h3 className="card-title">{ev.nama}</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', color: 'var(--text-muted)', fontSize: '0.83rem' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Calendar size={14} style={{ color: 'var(--primary-600)' }} />
+                          <strong>{ev.tanggal}</strong>
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <MapPin size={14} style={{ color: 'var(--danger-solid)' }} />
+                            <span>{ev.lokasi}</span>
+                          </span>
+                          <a
+                            href={mapSearchUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              padding: '2px 8px',
+                              fontSize: '0.72rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              marginLeft: '4px',
+                              color: 'var(--primary-600)',
+                              borderColor: 'var(--primary-200)'
+                            }}
+                          >
+                            <Compass size={12} />
+                            <span>Buka di Google Maps</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Status Badge Kuota */}
-                  {isHabis ? (
-                    <span className="badge badge-danger">Habis</span>
-                  ) : (
-                    <span className="badge badge-success">
-                      Sisa {sisaKuota} Kuota
-                    </span>
-                  )}
-                </div>
 
                 <div style={{
                   display: 'flex',
@@ -209,6 +264,7 @@ export default function EventView({ events, setEvents, showToast, isLoading, isE
                       <Trash2 size={14} />
                       <span>Hapus</span>
                     </button>
+                  </div>
                   </div>
                 </div>
               </div>
