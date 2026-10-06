@@ -1,5 +1,4 @@
-import React from 'react';
-import { Calendar, Users, Ticket, BarChart3, Sparkles } from 'lucide-react';
+import { Calendar, Users, Ticket, BarChart3 } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab }) {
   const navItems = [
@@ -14,20 +13,16 @@ export default function Navbar({ activeTab, setActiveTab }) {
       <header className="app-header">
         <div className="header-inner">
           <div className="brand-title">
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'var(--primary-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff'
-            }}>
-              <Ticket size={18} />
-            </div>
-            <span>Karsa Tiket</span>
-            <span className="brand-badge">Sesi 3</span>
+            <img
+              src="/logo.png?v=2"
+              alt="Logo Karsa Tiket"
+              style={{
+                width: '34px',
+                height: '34px',
+                objectFit: 'contain'
+              }}
+            />
+            <span style={{ fontWeight: 700, fontSize: '18px' }}>Karsa Tiket</span>
           </div>
 
           <nav className="desktop-nav navbar-nav">

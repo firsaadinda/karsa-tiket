@@ -3,11 +3,13 @@ import { Plus, Calendar, MapPin, Tag, Users, Edit2, Trash2, ExternalLink, Compas
 import { formatRupiah } from '../data/mockData';
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { LoadingSkeleton, EmptyState, ErrorState } from '../components/StateViews';
+import { addEventData, updateEventData, deleteEventData } from '../services/firestoreService';
 
-export default function EventView({ events, setEvents, showToast, isLoading, isError, onRetry }) {
+export default function EventView({ events, showToast, isLoading, isError, onRetry }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -45,7 +47,7 @@ export default function EventView({ events, setEvents, showToast, isLoading, isE
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -73,56 +75,118 @@ export default function EventView({ events, setEvents, showToast, isLoading, isE
       return;
     }
 
-    if (editingEvent) {
-      // AC 4: Kuota tidak boleh lebih kecil dari tiket_terjual
-      if (kuota < editingEvent.tiket_terjual) {
-        setFormError(`Kuota tidak boleh lebih kecil dari tiket yang sudah terjual (${editingEvent.tiket_terjual}).`);
-        return;
+    try {
+      setIsSubmitting(true);
+      if (editingEvent) {
+        // AC 4: Kuota tidak boleh lebih kecil dari tiket_terjual
+        if (kuota < editingEvent.tiket_terjual) {
+          setFormError(`Kuota tidak boleh lebih kecil dari tiket yang sudah terjual (${editingEvent.tiket_terjual}).`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        await updateEventData(editingEvent.id, {
+          nama: formData.nama.trim(),
+          tanggal: formData.tanggal,
+          lokasi: formData.lokasi.trim(),
+          harga_tiket: harga,
+          kuota: kuota,
+        });
+        showToast('Event berhasil diperbarui di Firestore', 'success');
+      } else {
+        // AC 1: Tambah Event baru dengan tiket_terjual = 0
+        await addEventData({
+          nama: formData.nama.trim(),
+          tanggal: formData.tanggal,
+          lokasi: formData.lokasi.trim(),
+          harga_tiket: harga,
+          kuota: kuota,
+        });
+        showToast('Event berhasil disimpan ke Firestore', 'success');
       }
 
-      setEvents(events.map((ev) => (ev.id === editingEvent.id ? {
-        ...ev,
-        nama: formData.nama.trim(),
-        tanggal: formData.tanggal,
-        lokasi: formData.lokasi.trim(),
-        harga_tiket: harga,
-        kuota: kuota,
-      } : ev)));
-      showToast('Event berhasil diperbarui', 'success');
-    } else {
-      // AC 1: Tambah Event baru dengan tiket_terjual = 0
-      const newEvent = {
-        id: 'Ev' + Math.random().toString(36).substring(2, 8),
-        nama: formData.nama.trim(),
-        tanggal: formData.tanggal,
-        lokasi: formData.lokasi.trim(),
-        harga_tiket: harga,
-        kuota: kuota,
-        tiket_terjual: 0,
-        dibuat_pada: new Date().toISOString(),
-      };
-      setEvents([newEvent, ...events]);
-      showToast('Event berhasil ditambahkan', 'success');
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error saving event:', err);
+      showToast('Gagal menyimpan event: ' + (err.message || 'Terjadi kesalahan'), 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setEvents(events.filter((ev) => ev.id !== deleteTarget.id));
-    showToast(`Event "${deleteTarget.nama}" berhasil dihapus`, 'success');
+    try {
+      await deleteEventData(deleteTarget.id);
+      showToast(`Event "${deleteTarget.nama}" berhasil dihapus dari Firestore`, 'success');
+    } catch (err) {
+      console.error('Error deleting event:', err);
+      showToast('Gagal menghapus event: ' + (err.message || 'Terjadi kesalahan'), 'error');
+    }
     setDeleteTarget(null);
   };
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">Daftar Event</h2>
-          <p className="page-subtitle">Kelola acara, jadwal, harga, dan kuota tiket.</p>
+      {/* Kotak Header Banner / Hero Card dengan Nuansa Cerah & Hidup */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(246, 249, 255, 0.95) 0%, rgba(238, 244, 255, 0.88) 45%, rgba(243, 251, 255, 0.95) 100%)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1.5px solid rgba(215, 226, 255, 0.95)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '22px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 12px 28px -5px rgba(99, 102, 241, 0.12), 0 4px 12px -2px rgba(14, 165, 233, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.9)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ flex: '1 1 300px' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: '#ffffff',
+            color: 'var(--primary-700)',
+            border: '1px solid var(--primary-200)',
+            padding: '3px 12px',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '0.78rem',
+            fontWeight: '700',
+            letterSpacing: '0.02em',
+            marginBottom: '8px',
+            boxShadow: '0 1px 3px rgba(79, 70, 229, 0.08)'
+          }}>
+            Ruang Seni & Kolaborasi
+          </span>
+          <h2 style={{
+            fontSize: '1.55rem',
+            fontWeight: '800',
+            color: '#312e81',
+            letterSpacing: '-0.02em',
+            marginBottom: '6px'
+          }}>
+            Jelajahi Acara & Workshop
+          </h2>
+          <p style={{
+            maxWidth: '620px',
+            lineHeight: '1.55',
+            fontSize: '0.88rem',
+            color: 'var(--text-secondary)',
+            margin: 0
+          }}>
+            Temukan jadwal workshop kreatif pilihan, pertunjukan musik langsung, dan agenda pameran terbaik dengan kuota tiket yang selalu terupdate.
+          </p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={handleOpenAdd}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleOpenAdd}
+          style={{ flexShrink: 0, padding: '10px 18px' }}
+        >
           <Plus size={18} />
           <span>Tambah Event</span>
         </button>
@@ -149,34 +213,40 @@ export default function EventView({ events, setEvents, showToast, isLoading, isE
             // Thumbnail ilustrasi dinamis berdasarkan jenis event komunitas (seni, musik, workshop)
             const getEventBanner = (nama) => {
               const lower = (nama || '').toLowerCase();
-              if (lower.includes('sablon') || lower.includes('tote') || lower.includes('lukis')) {
+              if (lower.includes('sablon') || lower.includes('tote')) {
+                return ['/sablon-tote-bag.jpg?v=6', '/sablon-tote-bag-2.jpg?v=2'];
+              }
+              if (lower.includes('lukis')) {
                 return 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80';
               }
               if (lower.includes('konser') || lower.includes('akustik') || lower.includes('musik')) {
-                return 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80';
+                return ['/konser-1.jpg?v=2', '/konser-2.jpg?v=2'];
               }
               if (lower.includes('keramik') || lower.includes('tembikar') || lower.includes('pottery')) {
-                return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&auto=format&fit=crop&q=80';
+                return ['/keramik-1.jpg?v=2', '/keramik-2.jpg?v=2'];
               }
               return 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop&q=80';
             };
 
             const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.lokasi)}`;
+            const bannerSrc = getEventBanner(ev.nama);
 
             return (
               <div key={ev.id} className="card" style={{ overflow: 'hidden', padding: 0 }}>
                 {/* Banner Gambar Event */}
-                <div style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden' }}>
-                  <img
-                    src={getEventBanner(ev.nama)}
-                    alt={ev.nama}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, transparent 60%)'
-                  }} />
+                <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-default)' }}>
+                  {Array.isArray(bannerSrc) ? (
+                    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+                      <img src={bannerSrc[0]} alt={`${ev.nama} 1`} style={{ width: '50%', height: '100%', objectFit: 'cover' }} />
+                      <img src={bannerSrc[1]} alt={`${ev.nama} 2`} style={{ width: '50%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <img
+                      src={bannerSrc}
+                      alt={ev.nama}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  )}
                   <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
                     {isHabis ? (
                       <span className="badge badge-danger">Habis</span>
@@ -373,11 +443,11 @@ export default function EventView({ events, setEvents, showToast, isLoading, isE
           </div>
 
           <div className="modal-footer" style={{ margin: '20px -20px -20px -20px' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>
               Batal
             </button>
-            <button type="submit" className="btn btn-primary">
-              {editingEvent ? 'Simpan Perubahan' : 'Simpan Event'}
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : (editingEvent ? 'Simpan Perubahan' : 'Simpan Event')}
             </button>
           </div>
         </form>

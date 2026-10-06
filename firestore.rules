@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidDate(str) {
+      return str is string && str.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidWa(wa, docId) {
+      return wa is string && 
+             wa == docId &&
+             wa.matches('^08[0-9]{8,11}$');
+    }
+
+    // 1. Koleksi: event
+    match /event/{eventId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.nama is string &&
+        request.resource.data.nama.size() >= 1 && request.resource.data.nama.size() <= 60 &&
+        request.resource.data.lokasi is string &&
+        request.resource.data.lokasi.size() >= 1 && request.resource.data.lokasi.size() <= 100 &&
+        isValidDate(request.resource.data.tanggal) &&
+        request.resource.data.harga_tiket is number && request.resource.data.harga_tiket >= 0 &&
+        request.resource.data.kuota is number && request.resource.data.kuota >= 1 && request.resource.data.kuota <= 500 &&
+        request.resource.data.tiket_terjual is number && request.resource.data.tiket_terjual >= 0 &&
+        request.resource.data.tiket_terjual <= request.resource.data.kuota;
+
+      allow update: if
+        request.resource.data.nama is string &&
+        request.resource.data.nama.size() >= 1 && request.resource.data.nama.size() <= 60 &&
+        request.resource.data.lokasi is string &&
+        request.resource.data.lokasi.size() >= 1 && request.resource.data.lokasi.size() <= 100 &&
+        isValidDate(request.resource.data.tanggal) &&
+        request.resource.data.harga_tiket is number && request.resource.data.harga_tiket >= 0 &&
+        request.resource.data.kuota is number && request.resource.data.kuota >= 1 && request.resource.data.kuota <= 500 &&
+        request.resource.data.tiket_terjual is number && request.resource.data.tiket_terjual >= 0 &&
+        request.resource.data.tiket_terjual <= request.resource.data.kuota;
+
+      allow delete: if true;
+    }
+
+    // 2. Koleksi: pembeli
+    match /pembeli/{waId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.nama is string &&
+        request.resource.data.nama.size() >= 1 && request.resource.data.nama.size() <= 60 &&
+        isValidWa(request.resource.data.no_whatsapp, waId) &&
+        request.resource.data.email is string &&
+        request.resource.data.email.size() <= 80 &&
+        request.resource.data.email.matches('.*@.*');
+
+      allow delete: if true;
+    }
+
+    // 3. Koleksi: tiket
+    match /tiket/{tiketId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.event_id is string &&
+        request.resource.data.nama_event is string &&
+        isValidDate(request.resource.data.tanggal_event) &&
+        request.resource.data.pembeli_id is string &&
+        request.resource.data.nama_pembeli is string &&
+        request.resource.data.harga_tiket is number && request.resource.data.harga_tiket >= 0 &&
+        request.resource.data.jumlah_tiket is number &&
+        request.resource.data.jumlah_tiket >= 1 && request.resource.data.jumlah_tiket <= 5 &&
+        request.resource.data.total is number &&
+        request.resource.data.total == (request.resource.data.harga_tiket * request.resource.data.jumlah_tiket) &&
+        request.resource.data.status == 'menunggu_bayar';
+
+      allow update: if
+        (
+          // Alur: menunggu_bayar -> lunas atau dibatalkan
+          (resource.data.status == 'menunggu_bayar' && (request.resource.data.status == 'lunas' || request.resource.data.status == 'dibatalkan')) ||
+          // Alur: lunas -> hadir
+          (resource.data.status == 'lunas' && request.resource.data.status == 'hadir') ||
+          // Update status tetap sama (misal update bukti transfer / catatan)
+          (resource.data.status == request.resource.data.status)
+        );
+
+      allow delete: if true;
+    }
+  }
+}

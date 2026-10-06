@@ -81,6 +81,9 @@ export const initialTiket = [
     jumlah_tiket: 3,
     total: 360000,
     status: "lunas",
+    metode_pembayaran: "Transfer Bank BCA",
+    bukti_transfer_nama: "transfer_bca_budi.jpg",
+    catatan_bayar: "Transfer m-BCA a.n Budi Santoso",
     dibuat_pada: "2026-10-02T16:00:00Z"
   },
   {
@@ -94,6 +97,9 @@ export const initialTiket = [
     jumlah_tiket: 1,
     total: 50000,
     status: "hadir",
+    metode_pembayaran: "QRIS",
+    bukti_transfer_nama: "qris_gopay_rian.png",
+    catatan_bayar: "QRIS Nobu / GoPay",
     dibuat_pada: "2026-10-03T11:10:00Z"
   }
 ];

@@ -2,12 +2,19 @@ import React, { useState } from 'react';
 import { Plus, Search, Phone, Mail, User, Edit2, Trash2 } from 'lucide-react';
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { LoadingSkeleton, EmptyState, ErrorState } from '../components/StateViews';
+import {
+  addPembeliData,
+  updatePembeliData,
+  deletePembeliData,
+  checkPembeliExists
+} from '../services/firestoreService';
 
-export default function PembeliView({ pembeliList, setPembeliList, showToast, isLoading, isError, onRetry }) {
+export default function PembeliView({ pembeliList, showToast, isLoading, isError, onRetry }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPembeli, setEditingPembeli] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -39,7 +46,7 @@ export default function PembeliView({ pembeliList, setPembeliList, showToast, is
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -66,40 +73,50 @@ export default function PembeliView({ pembeliList, setPembeliList, showToast, is
       return;
     }
 
-    if (editingPembeli) {
-      // Update data pembeli
-      setPembeliList(pembeliList.map((p) => (p.id === editingPembeli.id ? {
-        ...p,
-        nama: cleanNama,
-        email: cleanEmail,
-      } : p)));
-      showToast('Data pembeli berhasil diperbarui', 'success');
-    } else {
-      // AC 2: Cek apakah no_whatsapp sudah terdaftar
-      const exists = pembeliList.some((p) => p.no_whatsapp === cleanWa);
-      if (exists) {
-        setFormError('Nomor WhatsApp sudah terdaftar');
-        return;
+    try {
+      setIsSubmitting(true);
+      if (editingPembeli) {
+        // Update data pembeli
+        await updatePembeliData(editingPembeli.id, {
+          nama: cleanNama,
+          email: cleanEmail,
+        });
+        showToast('Data pembeli berhasil diperbarui di Firestore', 'success');
+      } else {
+        // Skema Firestore Bagian 4: "Sebelum menyimpan pembeli baru, periksa dokumen dengan getDoc. Jika sudah ada, tampilkan 'Nomor WhatsApp sudah terdaftar'."
+        const alreadyExists = await checkPembeliExists(cleanWa);
+        if (alreadyExists || pembeliList.some((p) => p.no_whatsapp === cleanWa)) {
+          setFormError('Nomor WhatsApp sudah terdaftar');
+          setIsSubmitting(false);
+          return;
+        }
+
+        await addPembeliData({
+          nama: cleanNama,
+          no_whatsapp: cleanWa,
+          email: cleanEmail,
+        });
+        showToast('Pembeli baru berhasil disimpan ke Firestore', 'success');
       }
 
-      const newPembeli = {
-        id: cleanWa, // Document ID menggunakan no_whatsapp
-        nama: cleanNama,
-        no_whatsapp: cleanWa,
-        email: cleanEmail,
-        dibuat_pada: new Date().toISOString(),
-      };
-      setPembeliList([newPembeli, ...pembeliList]);
-      showToast('Pembeli baru berhasil disimpan', 'success');
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error saving pembeli:', err);
+      showToast('Gagal menyimpan pembeli: ' + (err.message || 'Terjadi kesalahan'), 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setPembeliList(pembeliList.filter((p) => p.id !== deleteTarget.id));
-    showToast(`Data pembeli "${deleteTarget.nama}" berhasil dihapus`, 'success');
+    try {
+      await deletePembeliData(deleteTarget.id);
+      showToast(`Data pembeli "${deleteTarget.nama}" berhasil dihapus dari Firestore`, 'success');
+    } catch (err) {
+      console.error('Error deleting pembeli:', err);
+      showToast('Gagal menghapus pembeli: ' + (err.message || 'Terjadi kesalahan'), 'error');
+    }
     setDeleteTarget(null);
   };
 
@@ -292,11 +309,11 @@ export default function PembeliView({ pembeliList, setPembeliList, showToast, is
           </div>
 
           <div className="modal-footer" style={{ margin: '20px -20px -20px -20px' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>
               Batal
             </button>
-            <button type="submit" className="btn btn-primary">
-              {editingPembeli ? 'Simpan Perubahan' : 'Simpan Pembeli'}
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : (editingPembeli ? 'Simpan Perubahan' : 'Simpan Pembeli')}
             </button>
           </div>
         </form>
