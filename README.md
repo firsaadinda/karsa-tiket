@@ -1,16 +1,36 @@
-# React + Vite
+# Karsa Tiket - Tiketing Event & Workshop
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplikasi manajemen dan penjualan tiket event komunitas kreatif, workshop seni, dan konser musik mini. Dibangun dengan React 19, Vite, dan terintegrasi secara real-time dengan Google Cloud Firestore.
 
-Currently, two official plugins are available:
+- 🌐 **Live Demo (Netlify):** [https://karsa-tiket.netlify.app](https://karsa-tiket.netlify.app)
+- 📦 **Repository (GitHub):** [https://github.com/firsaadinda/karsa-tiket](https://github.com/firsaadinda/karsa-tiket)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Fitur Utama
 
-## React Compiler
+1. **Kelola Acara (Event):**
+   - Manajemen jadwal, lokasi, harga tiket, dan kuota kursi.
+   - Sisa kuota dan persentase keterisian dihitung secara otomatis.
+   - Banner hero modern dengan layout 3 section yang estetis.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. **Master Pembeli:**
+   - Pencatatan kontak pembeli unik berdasarkan nomor WhatsApp (`08xx`).
+   - Pencarian instan berdasarkan nama atau nomor kontak.
+   - Pencegahan nomor WhatsApp ganda via Firestore query.
 
-## Expanding the Oxlint configuration
+3. **Transaksi & Pemesanan Tiket:**
+   - Pemilihan event dengan kuota aktif dan otomatisasi kalkulasi total pembayaran.
+   - Alur status berjenjang: `Menunggu Bayar` ➔ `Sudah Dibayar (Lunas)` ➔ `Check-in (Hadir)` atau `Dibatalkan`.
+   - Unggah bukti transfer (PNG/JPG) dan preview struk pembayaran digital.
+   - Modal Rincian Pesanan dengan 4-step progress tracker.
+   - Otomatisasi kuota: penambahan `tiket_terjual` saat pembelian dan pengembalian kuota saat pembatalan.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+4. **Rekap Penjualan & Kehadiran:**
+   - Dashboard analitik KPI pendapatan terverifikasi (hanya tiket lunas/hadir).
+   - Monitoring rasio kehadiran peserta acara dan persentase penjualan.
+
+## Teknologi
+
+- **Frontend:** React 19, Vite, Lucide React Icons, Plus Jakarta Sans typography.
+- **Backend / Database:** Firebase Cloud Firestore (Jakarta Region `asia-southeast2`).
+- **Security:** Firebase Security Rules (`firestore.rules`) yang menjaga validasi tipe, integritas status, dan invariant data.
+- **Hosting:** Netlify dengan dukungan SPA redirect.
